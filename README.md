@@ -1,11 +1,11 @@
-# 🎉 PISSM - Personal Interface System Structure & Modifications
+# 🎉 PISSM - Personal Interface System Studio
 
 **An Enhanced File System Monitor with Beautiful Visual Interface**
+**(Not yet functional as editor)**
 
 ## ✨ Features
 
 ### 🎨 Visual Interface
-- **Beautiful color-coded interface** with emoji icons for file types
 - **Enhanced readability** with carefully chosen colors and formatting  
 - **Modern terminal UI** that's both functional and aesthetically pleasing
 - **Responsive layout** that adapts to terminal size
@@ -19,7 +19,7 @@
 - **Detailed file info view** (press `i` key)
 
 ### ⚡ Navigation & Control
-- **Vim-like keybindings** for efficient navigation
+- **Vim-like keybindings** for efficient navigation 
 - **Fast directory traversal** with breadcrumb navigation
 - **Quick search** within directories (`/` key)
 - **Advanced search** across directory trees (`s` key)
@@ -211,11 +211,5 @@ This project was enhanced with focus on:
 - Code organization and maintainability
 
 Feel free to suggest improvements or report issues!
-
-## 📜 License
-
-This project builds upon the original PISSM codebase with significant enhancements for better usability, visual appeal, and functionality.
-
----
 
 **Enjoy exploring your filesystem with PISSM! 🚀**
