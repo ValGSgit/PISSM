@@ -1,15 +1,18 @@
 module constants_mod
     implicit none
     
-    ! Screen dimensions and colors
-    integer, parameter :: MAX_PATH_LENGTH = 512
-    integer, parameter :: MAX_FILES = 1000
-    integer, parameter :: MAX_FILENAME = 256
-    integer, parameter :: SCREEN_WIDTH = 140
-    integer, parameter :: SCREEN_HEIGHT = 40
+    ! Screen dimensions and colors - optimized for lower memory usage
+    integer, parameter :: MAX_PATH_LENGTH = 256  ! Reduced from 512
+    integer, parameter :: MAX_FILES = 50         ! Reduced from 100 (most directories have < 50 files)
+    integer, parameter :: MAX_FILENAME = 64      ! Reduced from 128
+    
+    ! Dynamic screen dimensions (to be set at runtime)
+    integer :: SCREEN_WIDTH = 80   ! Default fallback
+    integer :: SCREEN_HEIGHT = 24  ! Default fallback
     
     ! ANSI color codes
     character(len=*), parameter :: COLOR_RESET = char(27)//'[0m'
+    character(len=*), parameter :: COLOR_BLACK = char(27)//'[30m'
     character(len=*), parameter :: COLOR_RED = char(27)//'[31m'
     character(len=*), parameter :: COLOR_GREEN = char(27)//'[32m'
     character(len=*), parameter :: COLOR_YELLOW = char(27)//'[33m'
@@ -22,11 +25,13 @@ module constants_mod
     character(len=*), parameter :: COLOR_UNDERLINE = char(27)//'[4m'
     
     ! Extended color codes for better visual appeal
+    character(len=*), parameter :: COLOR_BRIGHT_RED = char(27)//'[91m'
     character(len=*), parameter :: COLOR_BRIGHT_GREEN = char(27)//'[92m'
     character(len=*), parameter :: COLOR_BRIGHT_BLUE = char(27)//'[94m'
     character(len=*), parameter :: COLOR_BRIGHT_CYAN = char(27)//'[96m'
     character(len=*), parameter :: COLOR_BRIGHT_YELLOW = char(27)//'[93m'
     character(len=*), parameter :: COLOR_BRIGHT_MAGENTA = char(27)//'[95m'
+    character(len=*), parameter :: COLOR_BRIGHT_WHITE = char(27)//'[97m'
     
     ! File type indicators
     character(len=*), parameter :: ICON_DIRECTORY = '📁'

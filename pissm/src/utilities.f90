@@ -5,13 +5,56 @@ module utilities
 contains
     
     subroutine clear_screen()
-        write(*,'(A)') char(27)//'[2J'//char(27)//'[H'
+        ! Clear screen using standard ANSI escape sequence
+        write(*,'(A)', advance='no') char(27)//'[2J'//char(27)//'[H'
     end subroutine clear_screen
     
     subroutine set_cursor_position(row, col)
         integer, intent(in) :: row, col
         write(*,'(A,I0,A,I0,A)', advance='no') char(27)//'[', row, ';', col, 'H'
     end subroutine set_cursor_position
+
+    ! Get terminal size using tput command
+    subroutine get_terminal_size(width, height)
+        integer, intent(out) :: width, height
+        integer :: iostat_w, iostat_h, temp_width, temp_height
+        
+        ! Set default values in case detection fails
+        width = 80
+        height = 24
+        
+        ! Try to get actual terminal size using tput command
+        call execute_command_line('tput cols > /tmp/pissm_cols 2>/dev/null')
+        call execute_command_line('tput lines > /tmp/pissm_lines 2>/dev/null')
+        
+        ! Read width
+        open(unit=99, file='/tmp/pissm_cols', status='old', iostat=iostat_w)
+        if (iostat_w == 0) then
+            read(99, *, iostat=iostat_w) temp_width
+            close(99)
+            if (iostat_w == 0 .and. temp_width > 20 .and. temp_width < 500) then
+                width = temp_width
+            end if
+        end if
+        
+        ! Read height  
+        open(unit=98, file='/tmp/pissm_lines', status='old', iostat=iostat_h)
+        if (iostat_h == 0) then
+            read(98, *, iostat=iostat_h) temp_height
+            close(98)
+            if (iostat_h == 0 .and. temp_height > 10 .and. temp_height < 200) then
+                height = temp_height
+            end if
+        end if
+        
+        ! Clean up temp files
+        call execute_command_line('rm -f /tmp/pissm_cols /tmp/pissm_lines 2>/dev/null')
+        
+    end subroutine get_terminal_size
+    
+    subroutine clear_line()
+        write(*,'(A)', advance='no') char(27)//'[K'
+    end subroutine clear_line
     
     subroutine print_colored(text, color)
         character(len=*), intent(in) :: text, color
@@ -25,7 +68,6 @@ contains
         call print_colored(' PISSM - Personal Interface System Structure & Modifications ', COLOR_BOLD//COLOR_WHITE)
         write(*,*)
         call print_colored(repeat('=', SCREEN_WIDTH), COLOR_CYAN)
-        write(*,*)
     end subroutine print_header
     
     subroutine print_footer(message)
@@ -127,7 +169,7 @@ contains
     function get_file_icon(filename, is_directory, permissions) result(icon)
         character(len=*), intent(in) :: filename, permissions
         logical, intent(in) :: is_directory
-        character(len=4) :: icon
+        character(len=8) :: icon
         character(len=10) :: extension
         integer :: dot_pos
         
@@ -181,7 +223,7 @@ contains
         character(len=*), intent(in) :: path
         character(len=MAX_PATH_LENGTH) :: temp_path
         character(len=50) :: part
-        integer :: i, start_pos, slash_pos
+        integer :: start_pos, slash_pos
         
         call set_cursor_position(3, 1)
         call print_colored('📍 ', COLOR_YELLOW)
@@ -254,5 +296,28 @@ contains
         call set_cursor_position(7, 1)
         call print_colored(repeat('─', SCREEN_WIDTH-1), COLOR_DIM)
     end subroutine print_column_headers
+    
+    subroutine setup_terminal()
+        ! Set terminal to raw mode for better input handling
+        call execute_command_line('stty raw -echo 2>/dev/null')
+        
+        ! Hide cursor for cleaner interface
+        write(*,'(A)', advance='no') char(27)//'[?25l'
+        
+        ! Enable alternative screen buffer
+        write(*,'(A)', advance='no') char(27)//'[?1049h'
+    end subroutine setup_terminal
+    
+    subroutine restore_terminal()
+        ! Show cursor
+        write(*,'(A)', advance='no') char(27)//'[?25h'
+        
+        ! Disable alternative screen buffer
+        write(*,'(A)', advance='no') char(27)//'[?1049l'
+        
+        ! Restore terminal to normal state
+        call execute_command_line('stty sane 2>/dev/null')
+        call execute_command_line('reset 2>/dev/null')
+    end subroutine restore_terminal
 
 end module utilities

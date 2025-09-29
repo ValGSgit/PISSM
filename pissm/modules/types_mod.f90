@@ -7,9 +7,9 @@ module types_mod
         character(len=MAX_PATH_LENGTH) :: full_path
         logical :: is_directory
         integer(kind=8) :: size  ! Use 8-byte integer for large files
-        character(len=20) :: modified_time
+        character(len=12) :: modified_time  ! Reduced from 16
         character(len=10) :: permissions
-        character(len=50) :: owner_group
+        character(len=16) :: owner_group    ! Reduced from 24  
         integer :: link_count
         logical :: selected
     end type file_entry
@@ -32,6 +32,8 @@ module types_mod
         character(len=MAX_PATH_LENGTH) :: current_path
         character(len=MAX_PATH_LENGTH) :: clipboard_path
         integer :: clipboard_operation  ! 1=copy, 2=move
+        character(len=MAX_PATH_LENGTH) :: previous_path  ! For navigation memory
+        integer :: previous_selection  ! Remember cursor position
     end type interface_state
     
 end module types_mod

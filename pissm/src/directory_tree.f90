@@ -10,6 +10,8 @@ contains
     subroutine create_directory_node(path, node)
         character(len=*), intent(in) :: path
         type(directory_node), pointer, intent(out) :: node
+        type(file_entry) :: temp_files(MAX_FILES)
+        integer :: actual_count
         
         allocate(node)
         node%path = trim(path)
@@ -17,16 +19,41 @@ contains
         node%expanded = .false.
         node%child_count = 0
         
-        allocate(node%files(MAX_FILES))
-        call scan_directory(path, node%files, node%file_count, .false.)
+        ! First scan into temporary array to get actual count
+        call scan_directory(path, temp_files, actual_count, .false.)
+        
+        ! Allocate only what we need (minimum 1 to avoid zero-size arrays)
+        if (actual_count > 0) then
+            allocate(node%files(actual_count))
+            node%files(1:actual_count) = temp_files(1:actual_count)
+            node%file_count = actual_count
+        else
+            allocate(node%files(1))  ! Allocate at least 1 element
+            node%file_count = 0
+        end if
     end subroutine create_directory_node
     
     subroutine refresh_directory_node(node, show_hidden)
         type(directory_node), pointer, intent(inout) :: node
         logical, intent(in) :: show_hidden
+        type(file_entry) :: temp_files(MAX_FILES)
+        integer :: actual_count
         
         if (associated(node)) then
-            call scan_directory(node%path, node%files, node%file_count, show_hidden)
+            ! Scan into temporary array first
+            call scan_directory(node%path, temp_files, actual_count, show_hidden)
+            
+            ! Reallocate if necessary
+            if (allocated(node%files)) deallocate(node%files)
+            
+            if (actual_count > 0) then
+                allocate(node%files(actual_count))
+                node%files(1:actual_count) = temp_files(1:actual_count)
+                node%file_count = actual_count
+            else
+                allocate(node%files(1))
+                node%file_count = 0
+            end if
         end if
     end subroutine refresh_directory_node
     
@@ -36,8 +63,8 @@ contains
         
         integer :: i, current_line, display_line
         character(len=20) :: size_str
-        character(len=4) :: icon
-        character(len=30) :: perm_color, name_color, size_color
+        character(len=8) :: icon
+        character(len=30) :: name_color, size_color
         
         if (.not. associated(node)) return
         
@@ -196,17 +223,12 @@ contains
         end if
     end function is_selected_directory
     
-    subroutine cleanup_directory_tree(node)
+    recursive subroutine cleanup_directory_tree(node)
         type(directory_node), pointer, intent(inout) :: node
-        integer :: i
         
         if (associated(node)) then
-            if (associated(node%children)) then
-                do i = 1, node%child_count
-                    call cleanup_directory_tree(node%children(i))
-                end do
-                deallocate(node%children)
-            end if
+            ! Note: children array is not implemented in this version
+            ! Future enhancement could implement directory tree structure
             
             if (allocated(node%files)) then
                 deallocate(node%files)

@@ -8,5 +8,5 @@ module globals_mod
     
     logical :: program_running = .true.
     character(len=MAX_PATH_LENGTH) :: original_path
-    
+
 end module globals_mod

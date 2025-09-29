@@ -2,8 +2,8 @@
 
 # Compiler settings
 FC = gfortran
-FFLAGS = -std=f2008 -Wall -Wextra -pedantic -fcheck=all -g -O2
-LDFLAGS = 
+FFLAGS = -std=f2008 -Wall -Wextra -pedantic -O2 -s  # Removed -fcheck=all and -g, added -s for strip symbols
+LDFLAGS = -s 
 
 # Directories
 SRCDIR = src
@@ -14,9 +14,9 @@ BINDIR = bin
 # Target executable
 TARGET = $(BINDIR)/pissm
 
-# Source files
-MODSRCS = $(wildcard $(MODDIR)/*.f90)
-SRCS = $(wildcard $(SRCDIR)/*.f90)
+# Source files (ordered by dependencies)
+MODSRCS = $(MODDIR)/constants_mod.f90 $(MODDIR)/types_mod.f90 $(MODDIR)/globals_mod.f90
+SRCS = $(SRCDIR)/utilities.f90 $(SRCDIR)/file_operations.f90 $(SRCDIR)/directory_tree.f90 $(SRCDIR)/user_input.f90 $(SRCDIR)/interface_manager.f90 $(SRCDIR)/main.f90
 
 # Object files
 MODOBS = $(MODSRCS:$(MODDIR)/%.f90=$(OBJDIR)/%.o)

@@ -14,16 +14,16 @@ contains
         
         character(len=512) :: command, temp_file, line
         integer :: unit_num, iostat, i
-        logical :: is_dir, is_hidden
+        logical :: is_hidden
         
         file_count = 0
         temp_file = '/tmp/pissm_ls_output'
         
         ! Create enhanced ls command for detailed information
         if (show_hidden) then
-            command = 'ls -laF --time-style=+"%Y-%m-%d %H:%M" "'//trim(path)//'" > '//trim(temp_file)//' 2>/dev/null'
+            command = 'ls -la --time-style=long-iso "'//trim(path)//'" > '//trim(temp_file)//' 2>/dev/null'
         else
-            command = 'ls -lF --time-style=+"%Y-%m-%d %H:%M" "'//trim(path)//'" > '//trim(temp_file)//' 2>/dev/null'
+            command = 'ls -l --time-style=long-iso "'//trim(path)//'" > '//trim(temp_file)//' 2>/dev/null'
         end if
         
         call execute_command_line(command)
@@ -65,96 +65,106 @@ contains
         call execute_command_line(command)
     end subroutine scan_directory
     
-    subroutine parse_enhanced_ls_line(line, file_entry, base_path)
+    subroutine parse_enhanced_ls_line(line, entry, base_path)
         character(len=*), intent(in) :: line, base_path
-        type(file_entry), intent(out) :: file_entry
+        type(file_entry), intent(out) :: entry
         
-        character(len=256) :: parts(10)
-        integer :: i, j, start_pos, part_count, iostat
+        character(len=256) :: parts(20)  ! More parts to handle spaces in filenames
+        integer :: i, num_parts, start_pos, end_pos, iostat
         character(len=256) :: temp_line
         character :: file_type_char
+        logical :: in_word
         
-        ! Initialize file_entry
-        file_entry%name = ''
-        file_entry%full_path = ''
-        file_entry%is_directory = .false.
-        file_entry%size = 0
-        file_entry%modified_time = ''
-        file_entry%permissions = ''
-        file_entry%owner_group = ''
-        file_entry%link_count = 0
-        file_entry%selected = .false.
+        ! Initialize entry
+        entry%name = ''
+        entry%full_path = ''
+        entry%is_directory = .false.
+        entry%size = 0
+        entry%modified_time = ''
+        entry%permissions = ''
+        entry%owner_group = ''
+        entry%link_count = 0
+        entry%selected = .false.
         
         temp_line = trim(adjustl(line))
         if (len_trim(temp_line) == 0) return
         
-        ! Parse permissions (first 10 characters)
-        file_entry%permissions = temp_line(1:10)
-        file_type_char = temp_line(1:1)
-        file_entry%is_directory = (file_type_char == 'd')
+        ! Split line into space-separated parts (but preserve spaces in filename)
+        num_parts = 0
+        start_pos = 1
+        in_word = .false.
         
-        ! Split the rest of the line into parts
-        part_count = 0
-        start_pos = 12  ! Skip permissions and space
-        
-        do i = start_pos, len_trim(temp_line)
+        do i = 1, len_trim(temp_line)
             if (temp_line(i:i) /= ' ') then
-                j = i
-                do while (j <= len_trim(temp_line) .and. temp_line(j:j) /= ' ')
-                    j = j + 1
-                end do
-                part_count = part_count + 1
-                if (part_count <= size(parts)) then
-                    parts(part_count) = temp_line(i:j-1)
+                if (.not. in_word) then
+                    ! Start of new word
+                    num_parts = num_parts + 1
+                    start_pos = i
+                    in_word = .true.
                 end if
-                
-                ! Skip multiple spaces
-                do while (j <= len_trim(temp_line) .and. temp_line(j:j) == ' ')
-                    j = j + 1
-                end do
-                i = j - 1
+            else
+                if (in_word) then
+                    ! End of word
+                    end_pos = i - 1
+                    if (num_parts <= 20) then
+                        parts(num_parts) = temp_line(start_pos:end_pos)
+                    end if
+                    in_word = .false.
+                end if
             end if
         end do
         
-        ! Parse fields based on position
-        if (part_count >= 8) then
-            ! Link count
-            read(parts(1), *, iostat=iostat) file_entry%link_count
-            if (iostat /= 0) file_entry%link_count = 1
-            
-            ! Owner and group
-            file_entry%owner_group = trim(parts(2))//'.'//trim(parts(3))
-            
-            ! Size
-            if (.not. file_entry%is_directory) then
-                read(parts(4), *, iostat=iostat) file_entry%size
-                if (iostat /= 0) file_entry%size = 0
+        ! Handle last word
+        if (in_word) then
+            end_pos = len_trim(temp_line)
+            if (num_parts <= 20) then
+                parts(num_parts) = temp_line(start_pos:end_pos)
             end if
-            
-            ! Date and time (parts 5, 6)
-            file_entry%modified_time = trim(parts(5))//' '//trim(parts(6))
-            
-            ! Filename (everything after time)
-            do i = len_trim(temp_line), 1, -1
-                if (temp_line(i:i) == ' ' .and. i > index(temp_line, trim(parts(6))) + len_trim(parts(6))) then
-                    file_entry%name = temp_line(i+1:len_trim(temp_line))
-                    exit
-                end if
-            end do
-            
-            ! Remove ls file type indicators (* / @ etc.)
-            if (len_trim(file_entry%name) > 0) then
-                i = len_trim(file_entry%name)
-                if (file_entry%name(i:i) == '*' .or. file_entry%name(i:i) == '/' .or. &
-                    file_entry%name(i:i) == '@' .or. file_entry%name(i:i) == '|') then
-                    file_entry%name = file_entry%name(1:i-1)
-                end if
+        end if
+        
+        ! Must have at least 8 parts for valid ls -l output
+        if (num_parts < 8) return
+        
+        ! Parse the fields
+        entry%permissions = trim(parts(1))
+        file_type_char = entry%permissions(1:1)
+        entry%is_directory = (file_type_char == 'd')
+        
+        ! Link count
+        read(parts(2), *, iostat=iostat) entry%link_count
+        if (iostat /= 0) entry%link_count = 1
+        
+        ! Owner and group
+        entry%owner_group = trim(parts(3))//'.'//trim(parts(4))
+        
+        ! Size
+        if (.not. entry%is_directory) then
+            read(parts(5), *, iostat=iostat) entry%size
+            if (iostat /= 0) entry%size = 0
+        end if
+        
+        ! Date and time (parts 6 and 7)
+        entry%modified_time = trim(parts(6))//' '//trim(parts(7))
+        
+        ! Filename - everything from part 8 onwards (to handle spaces)
+        entry%name = ''
+        do i = 8, num_parts
+            if (i > 8) entry%name = trim(entry%name)//' '
+            entry%name = trim(entry%name)//trim(parts(i))
+        end do
+        
+        ! Remove ls file type indicators
+        if (len_trim(entry%name) > 0) then
+            i = len_trim(entry%name)
+            if (entry%name(i:i) == '*' .or. entry%name(i:i) == '/' .or. &
+                entry%name(i:i) == '@' .or. entry%name(i:i) == '|') then
+                entry%name = entry%name(1:i-1)
             end if
         end if
         
         ! Set full path
-        if (len_trim(file_entry%name) > 0) then
-            file_entry%full_path = trim(base_path)//'/'//trim(file_entry%name)
+        if (len_trim(entry%name) > 0) then
+            entry%full_path = trim(base_path)//'/'//trim(entry%name)
         end if
     end subroutine parse_enhanced_ls_line
     
