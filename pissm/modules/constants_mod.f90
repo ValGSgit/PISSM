@@ -1,16 +1,31 @@
+!> \brief Constants Module
+!! 
+!! This module defines all global constants used throughout PISSM.
+!! It includes:
+!!  - Memory and string size limits
+!!  - ANSI color codes for terminal output
+!!  - File type icons/indicators  
+!!  - Menu option identifiers
+!!
+!! \author Your Name
+!! \date 2024
+
 module constants_mod
     implicit none
     
-    ! Screen dimensions and colors - optimized for lower memory usage
-    integer, parameter :: MAX_PATH_LENGTH = 256  ! Reduced from 512
-    integer, parameter :: MAX_FILES = 50         ! Reduced from 100 (most directories have < 50 files)
-    integer, parameter :: MAX_FILENAME = 64      ! Reduced from 128
+    !> Configuration Constants
+    !! Memory and string length limits
+    integer, parameter :: MAX_PATH_LENGTH = 256  !! Maximum path string length
+    integer, parameter :: MAX_FILES = 50         !! Maximum files per directory
+    integer, parameter :: MAX_FILENAME = 64      !! Maximum filename length
     
-    ! Dynamic screen dimensions (to be set at runtime)
-    integer :: SCREEN_WIDTH = 80   ! Default fallback
-    integer :: SCREEN_HEIGHT = 24  ! Default fallback
+    !> Dynamic Screen Dimensions
+    !! These are set at runtime based on terminal size
+    integer :: SCREEN_WIDTH = 80   !! Current terminal width
+    integer :: SCREEN_HEIGHT = 24  !! Current terminal height
     
-    ! ANSI color codes
+    ! ========== ANSI Color Codes ==========
+    
     character(len=*), parameter :: COLOR_RESET = char(27)//'[0m'
     character(len=*), parameter :: COLOR_BLACK = char(27)//'[30m'
     character(len=*), parameter :: COLOR_RED = char(27)//'[31m'
@@ -24,7 +39,8 @@ module constants_mod
     character(len=*), parameter :: COLOR_DIM = char(27)//'[2m'
     character(len=*), parameter :: COLOR_UNDERLINE = char(27)//'[4m'
     
-    ! Extended color codes for better visual appeal
+    ! ========== Bright/Extended Colors ==========
+    
     character(len=*), parameter :: COLOR_BRIGHT_RED = char(27)//'[91m'
     character(len=*), parameter :: COLOR_BRIGHT_GREEN = char(27)//'[92m'
     character(len=*), parameter :: COLOR_BRIGHT_BLUE = char(27)//'[94m'
@@ -33,7 +49,8 @@ module constants_mod
     character(len=*), parameter :: COLOR_BRIGHT_MAGENTA = char(27)//'[95m'
     character(len=*), parameter :: COLOR_BRIGHT_WHITE = char(27)//'[97m'
     
-    ! File type indicators
+    ! ========== File Type Icons ==========
+    
     character(len=*), parameter :: ICON_DIRECTORY = '📁'
     character(len=*), parameter :: ICON_FILE = '📄'
     character(len=*), parameter :: ICON_EXECUTABLE = '⚡'
@@ -43,7 +60,8 @@ module constants_mod
     character(len=*), parameter :: ICON_TEXT = '📝'
     character(len=*), parameter :: ICON_CODE = '💾'
     
-    ! Menu options
+    ! ========== Menu Options ==========
+    
     integer, parameter :: MENU_BROWSE = 1
     integer, parameter :: MENU_MOVE = 2
     integer, parameter :: MENU_COPY = 3

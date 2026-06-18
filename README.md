@@ -42,12 +42,34 @@
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Option 1: Docker (No Installation Required) ⚡ Recommended
+
+If you have Docker installed, this is the easiest way:
+
+```bash
+# Linux/macOS
+chmod +x pissm.docker
+./pissm.docker build    # Build once
+./pissm.docker run      # Run PISSM
+
+# Windows
+pissm.docker.bat build
+pissm.docker.bat run
+```
+
+See [DOCKER_QUICKSTART.md](DOCKER_QUICKSTART.md) for detailed Docker instructions.
+
+**On Linux without sudo?** See [LINUX_NOSUDO_QUICK.md](LINUX_NOSUDO_QUICK.md) for setup (one-time only).
+
+### Option 2: Traditional Build
+
+#### Prerequisites
 - **gfortran** compiler (GNU Fortran)
-- **Linux/Unix system** (tested on Linux)
+- **make** build tool
+- **Linux/Unix system** or macOS
 - **Terminal** supporting ANSI colors
 
-### Installation
+#### Installation
 
 1. **Clone or download** the PISSM source code
 2. **Navigate** to the pissm directory

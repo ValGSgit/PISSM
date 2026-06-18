@@ -1,0 +1,49 @@
+# Fortran build artifacts
+*.o
+*.mod
+*.smod
+obj/
+bin/
+
+# Build directories
+build/
+dist/
+
+# Temporary files
+*.tmp
+*.log
+*~
+*.swp
+*.swo
+
+# Editor files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# PISSM temporary files
+/tmp/pissm_*
+.pissm_cache
+
+# Executables
+pissm
+*.exe
+
+# Debug files
+*.gdb
+core
+core.*
+
+# IDE artifacts
+.clangd/
+compile_commands.json

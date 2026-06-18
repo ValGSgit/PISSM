@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  pissm:
+    build: .
+    container_name: pissm-app
+    stdin_open: true
+    tty: true
+    volumes:
+      - /home:/home:ro
+      - /root:/root:ro
+      - /tmp:/tmp
+    environment:
+      - TERM=xterm-256color
+    # Browse /root directory by default, or specify a path
+    # command: /root

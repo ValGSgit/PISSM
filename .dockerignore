@@ -1,0 +1,27 @@
+# Git files
+.git
+.gitignore
+
+# Build artifacts
+pissm/obj
+pissm/bin
+pissm/*.o
+pissm/*.mod
+
+# Editor files
+.vscode
+.idea
+*.sublime-workspace
+*.sublime-project
+
+# System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Documentation (not needed in container)
+*.md

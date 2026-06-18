@@ -1,23 +1,53 @@
+!> \brief Utility Functions Module
+!!
+!! Provides general-purpose utility functions for:
+!!  - Terminal control and ANSI escape sequences
+!!  - File information and size formatting
+!!  - String manipulation and case conversion
+!!  - Display formatting and UI elements
+!!
+!! \author Your Name
+!! \date 2024
+
 module utilities
     use constants_mod
     implicit none
     
+    private
+    
+    !> Public subroutines
+    public :: clear_screen, set_cursor_position, get_terminal_size
+    public :: clear_line, print_colored, print_header, print_footer
+    public :: print_enhanced_footer, get_file_size, file_exists
+    public :: is_directory, format_size, get_current_time
+    public :: get_file_icon, to_lowercase, draw_breadcrumb
+    public :: print_header_enhanced, print_column_headers
+    public :: setup_terminal, restore_terminal
+    
 contains
     
+    !> Clear the entire screen and move cursor to top-left
     subroutine clear_screen()
         ! Clear screen using standard ANSI escape sequence
         write(*,'(A)', advance='no') char(27)//'[2J'//char(27)//'[H'
     end subroutine clear_screen
     
+    !> Set cursor to specified row and column
     subroutine set_cursor_position(row, col)
-        integer, intent(in) :: row, col
+        integer, intent(in) :: row   !! Row number (1-based)
+        integer, intent(in) :: col   !! Column number (1-based)
         write(*,'(A,I0,A,I0,A)', advance='no') char(27)//'[', row, ';', col, 'H'
     end subroutine set_cursor_position
 
-    ! Get terminal size using tput command
+    !> Detect current terminal dimensions using tput
+    !!
+    !! Attempts to get actual terminal size using tput command.
+    !! Falls back to defaults (80x24) if detection fails.
     subroutine get_terminal_size(width, height)
-        integer, intent(out) :: width, height
+        integer, intent(out) :: width    !! Terminal width in characters
+        integer, intent(out) :: height   !! Terminal height in characters
         integer :: iostat_w, iostat_h, temp_width, temp_height
+        integer :: unit_num
         
         ! Set default values in case detection fails
         width = 80
@@ -28,20 +58,20 @@ contains
         call execute_command_line('tput lines > /tmp/pissm_lines 2>/dev/null')
         
         ! Read width
-        open(unit=99, file='/tmp/pissm_cols', status='old', iostat=iostat_w)
+        open(newunit=unit_num, file='/tmp/pissm_cols', status='old', iostat=iostat_w)
         if (iostat_w == 0) then
-            read(99, *, iostat=iostat_w) temp_width
-            close(99)
+            read(unit_num, *, iostat=iostat_w) temp_width
+            close(unit_num)
             if (iostat_w == 0 .and. temp_width > 20 .and. temp_width < 500) then
                 width = temp_width
             end if
         end if
         
         ! Read height  
-        open(unit=98, file='/tmp/pissm_lines', status='old', iostat=iostat_h)
+        open(newunit=unit_num, file='/tmp/pissm_lines', status='old', iostat=iostat_h)
         if (iostat_h == 0) then
-            read(98, *, iostat=iostat_h) temp_height
-            close(98)
+            read(unit_num, *, iostat=iostat_h) temp_height
+            close(unit_num)
             if (iostat_h == 0 .and. temp_height > 10 .and. temp_height < 200) then
                 height = temp_height
             end if
@@ -52,15 +82,19 @@ contains
         
     end subroutine get_terminal_size
     
+    !> Clear from cursor to end of current line
     subroutine clear_line()
         write(*,'(A)', advance='no') char(27)//'[K'
     end subroutine clear_line
     
+    !> Print text with ANSI color code
     subroutine print_colored(text, color)
-        character(len=*), intent(in) :: text, color
+        character(len=*), intent(in) :: text    !! Text to print
+        character(len=*), intent(in) :: color   !! ANSI color code
         write(*,'(A)', advance='no') trim(color)//trim(text)//COLOR_RESET
     end subroutine print_colored
     
+    !> Print page header
     subroutine print_header()
         call clear_screen()
         call print_colored(repeat('=', SCREEN_WIDTH), COLOR_CYAN)
@@ -70,8 +104,9 @@ contains
         call print_colored(repeat('=', SCREEN_WIDTH), COLOR_CYAN)
     end subroutine print_header
     
+    !> Print page footer with optional message
     subroutine print_footer(message)
-        character(len=*), intent(in), optional :: message
+        character(len=*), intent(in), optional :: message  !! Footer message
         integer :: row
         
         row = SCREEN_HEIGHT - 2
@@ -84,8 +119,9 @@ contains
         end if
     end subroutine print_footer
     
+    !> Print enhanced footer with box drawing
     subroutine print_enhanced_footer(message)
-        character(len=*), intent(in), optional :: message
+        character(len=*), intent(in), optional :: message  !! Footer message
         integer :: row
         
         row = SCREEN_HEIGHT - 3
@@ -103,9 +139,14 @@ contains
         call print_colored(repeat('═', SCREEN_WIDTH), COLOR_BRIGHT_BLUE)
     end subroutine print_enhanced_footer
     
+    !> Get file size in bytes
+    !!
+    !! Attempts to open file and determine its size using INQUIRE.
+    !! Returns 0 if file cannot be accessed.
     function get_file_size(filename) result(size)
-        character(len=*), intent(in) :: filename
-        integer :: size, unit_num, iostat
+        character(len=*), intent(in) :: filename  !! File path
+        integer :: size                           !! File size in bytes
+        integer :: unit_num, iostat
         
         size = 0
         open(newunit=unit_num, file=trim(filename), status='old', &
@@ -117,16 +158,18 @@ contains
         end if
     end function get_file_size
     
+    !> Check if file exists
     function file_exists(filename) result(exists)
-        character(len=*), intent(in) :: filename
-        logical :: exists
+        character(len=*), intent(in) :: filename  !! File path
+        logical :: exists                         !! True if file exists
         
         inquire(file=trim(filename), exist=exists)
     end function file_exists
     
+    !> Check if path is a directory
     function is_directory(path) result(is_dir)
-        character(len=*), intent(in) :: path
-        logical :: is_dir
+        character(len=*), intent(in) :: path   !! Directory path
+        logical :: is_dir                      !! True if path is a directory
         character(len=512) :: command
         integer :: status
         
@@ -136,9 +179,12 @@ contains
         is_dir = (status == 0)
     end function is_directory
     
+    !> Format byte size as human-readable string
+    !!
+    !! Converts bytes to KB, MB, GB, TB with appropriate precision.
     subroutine format_size(size_bytes, formatted_size)
-        integer(kind=8), intent(in) :: size_bytes
-        character(len=*), intent(out) :: formatted_size
+        integer(kind=8), intent(in) :: size_bytes        !! Size in bytes
+        character(len=*), intent(out) :: formatted_size  !! Formatted size string
         real(kind=8) :: size_real
         
         size_real = real(size_bytes, kind=8)
@@ -156,8 +202,9 @@ contains
         end if
     end subroutine format_size
     
+    !> Get current date and time as formatted string
     subroutine get_current_time(time_str)
-        character(len=*), intent(out) :: time_str
+        character(len=*), intent(out) :: time_str  !! Formatted date-time string
         character(len=8) :: date
         character(len=10) :: time
         
@@ -166,10 +213,14 @@ contains
                   time(1:2)//':'//time(3:4)
     end subroutine get_current_time
     
+    !> Get appropriate emoji icon for file type
+    !!
+    !! Returns an emoji based on file type, permissions, or extension.
     function get_file_icon(filename, is_directory, permissions) result(icon)
-        character(len=*), intent(in) :: filename, permissions
-        logical, intent(in) :: is_directory
-        character(len=8) :: icon
+        character(len=*), intent(in) :: filename       !! File name
+        logical, intent(in) :: is_directory            !! Directory flag
+        character(len=*), intent(in) :: permissions    !! Permissions string
+        character(len=8) :: icon                       !! Emoji icon
         character(len=10) :: extension
         integer :: dot_pos
         
@@ -207,8 +258,9 @@ contains
         end if
     end function get_file_icon
     
+    !> Convert string to lowercase
     subroutine to_lowercase(string)
-        character(len=*), intent(inout) :: string
+        character(len=*), intent(inout) :: string   !! String to convert
         integer :: i, char_code
         
         do i = 1, len_trim(string)
@@ -219,8 +271,9 @@ contains
         end do
     end subroutine to_lowercase
     
+    !> Draw breadcrumb navigation path
     subroutine draw_breadcrumb(path)
-        character(len=*), intent(in) :: path
+        character(len=*), intent(in) :: path    !! Directory path
         character(len=MAX_PATH_LENGTH) :: temp_path
         character(len=50) :: part
         integer :: start_pos, slash_pos
@@ -258,6 +311,7 @@ contains
         end do
     end subroutine draw_breadcrumb
     
+    !> Print enhanced page header with styled title
     subroutine print_header_enhanced()
         call clear_screen()
         
@@ -278,6 +332,7 @@ contains
         call print_colored(repeat('═', SCREEN_WIDTH), COLOR_BRIGHT_CYAN//COLOR_BOLD)
     end subroutine print_header_enhanced
     
+    !> Print column headers for file listing
     subroutine print_column_headers()
         call set_cursor_position(6, 1)
         call print_colored('  ', COLOR_WHITE)
@@ -297,6 +352,9 @@ contains
         call print_colored(repeat('─', SCREEN_WIDTH-1), COLOR_DIM)
     end subroutine print_column_headers
     
+    !> Setup terminal for raw input mode
+    !!
+    !! Configures terminal for interactive input with hidden cursor.
     subroutine setup_terminal()
         ! Set terminal to raw mode for better input handling
         call execute_command_line('stty raw -echo 2>/dev/null')
@@ -308,6 +366,9 @@ contains
         write(*,'(A)', advance='no') char(27)//'[?1049h'
     end subroutine setup_terminal
     
+    !> Restore terminal to normal state
+    !!
+    !! Resets terminal settings and shows cursor.
     subroutine restore_terminal()
         ! Show cursor
         write(*,'(A)', advance='no') char(27)//'[?25h'
